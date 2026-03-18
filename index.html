@@ -379,136 +379,10 @@
 
 <div class="container">
 
-  <!-- Workflow -->
-  <div style="margin-bottom: 24px;">
-    <div class="workflow">
-      <span class="workflow-item">初回ZOOM</span>
-      <span class="workflow-arrow">&rarr;</span>
-      <span class="workflow-item">ヒアリングシート</span>
-      <span class="workflow-arrow">&rarr;</span>
-      <span class="workflow-item active">このツール</span>
-      <span class="workflow-arrow">&rarr;</span>
-      <span class="workflow-item">お客様確認</span>
-      <span class="workflow-arrow">&rarr;</span>
-      <span class="workflow-item">撮影</span>
-    </div>
-  </div>
-
-  <!-- STEP 1: Basic Info -->
+  <!-- STEP 1: Hearing Sheet -->
   <div class="step" id="step1">
     <div class="step-header" onclick="toggleStep('step1')">
       <div class="step-number" id="step1-num">1</div>
-      <div>
-        <div class="step-title">基本情報を入力</div>
-        <div class="step-subtitle">ヒアリングシートから主要な情報を入力してください</div>
-      </div>
-      <div class="step-toggle">&#9660;</div>
-    </div>
-    <div class="step-body">
-      <div class="info-box">
-        ヒアリングシートに記載がある項目だけ入力すればOKです。空欄でもAIが補完してくれます。<br>
-        <strong>赤い*の項目</strong>だけは必ず入力してください。
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>店名 / サロン名 <span class="required">*</span></label>
-          <input type="text" id="storeName" placeholder="例: beautysalon i">
-        </div>
-        <div class="form-group">
-          <label>業種 / ジャンル <span class="required">*</span></label>
-          <select id="genre">
-            <option value="">選択してください</option>
-            <optgroup label="美容系">
-              <option value="エステ/フェイシャル">エステ / フェイシャル</option>
-              <option value="痩身/ダイエット">痩身 / ダイエット</option>
-              <option value="肌質改善">肌質改善</option>
-              <option value="脱毛">脱毛</option>
-              <option value="ネイル">ネイル</option>
-              <option value="アイラッシュ/まつ毛">アイラッシュ / まつ毛</option>
-              <option value="美容室/ヘアサロン">美容室 / ヘアサロン</option>
-              <option value="トータルビューティー">トータルビューティー</option>
-            </optgroup>
-            <optgroup label="健康/リラクゼーション系">
-              <option value="整体">整体</option>
-              <option value="整骨/接骨">整骨 / 接骨</option>
-              <option value="鍼灸">鍼灸</option>
-              <option value="ヘッドスパ">ヘッドスパ</option>
-              <option value="アロマ/リラクゼーション">アロマ / リラクゼーション</option>
-              <option value="よもぎ蒸し/温活">よもぎ蒸し / 温活</option>
-            </optgroup>
-            <optgroup label="医療系">
-              <option value="美容皮膚科/クリニック">美容皮膚科 / クリニック</option>
-              <option value="歯科">歯科</option>
-            </optgroup>
-            <optgroup label="飲食系">
-              <option value="飲食/レストラン">飲食 / レストラン</option>
-              <option value="カフェ">カフェ</option>
-              <option value="パン屋/ベーカリー">パン屋 / ベーカリー</option>
-              <option value="バー/スナック">バー / スナック</option>
-            </optgroup>
-            <optgroup label="その他">
-              <option value="スポーツ/フィットネス">スポーツ / フィットネス</option>
-              <option value="教育/スクール">教育 / スクール</option>
-              <option value="住宅/リフォーム">住宅 / リフォーム</option>
-              <option value="宿泊/温泉">宿泊 / 温泉</option>
-              <option value="ペット">ペット</option>
-              <option value="その他">その他（ヒアリングシートに記載）</option>
-            </optgroup>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>地域 / 住所 <span class="required">*</span></label>
-          <input type="text" id="area" placeholder="例: 愛媛県松山市 / ○○駅徒歩5分">
-        </div>
-        <div class="form-group">
-          <label>オーナー名 / 担当者名 <span class="optional">（任意）</span></label>
-          <input type="text" id="ownerName" placeholder="例: 山田花子">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>主要メニュー / サービス <span class="optional">（任意・複数可）</span></label>
-        <input type="text" id="mainMenu" placeholder="例: 肌質改善コース、毛穴洗浄、フェイシャルエステ">
-        <div class="form-hint">カンマ区切りで複数入力できます</div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>ターゲット層 <span class="optional">（任意）</span></label>
-          <input type="text" id="target" placeholder="例: 30-50代の肌悩みを持つ女性">
-        </div>
-        <div class="form-group">
-          <label>強み / 差別化ポイント <span class="optional">（任意）</span></label>
-          <input type="text" id="strength" placeholder="例: 元看護師/結果重視/完全個室">
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>実績 / 数字 <span class="optional">（任意）</span></label>
-          <input type="text" id="achievement" placeholder="例: 3年間で2,000件の施術実績">
-        </div>
-        <div class="form-group">
-          <label>価格帯 <span class="optional">（任意）</span></label>
-          <input type="text" id="price" placeholder="例: 初回5,000円〜 / 通常8,000円">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>その他メモ <span class="optional">（任意）</span></label>
-        <input type="text" id="memo" placeholder="例: LINE公式あり/駐車場3台/ビフォーアフター写真あり">
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 2: Hearing Sheet -->
-  <div class="step" id="step2">
-    <div class="step-header" onclick="toggleStep('step2')">
-      <div class="step-number" id="step2-num">2</div>
       <div>
         <div class="step-title">ヒアリングシートを貼り付け</div>
         <div class="step-subtitle">Google Docsの内容をそのままコピー&ペースト</div>
@@ -540,10 +414,10 @@
     </div>
   </div>
 
-  <!-- STEP 3: Generate -->
-  <div class="step" id="step3">
-    <div class="step-header" onclick="toggleStep('step3')">
-      <div class="step-number" id="step3-num">3</div>
+  <!-- STEP 2: Generate -->
+  <div class="step" id="step2">
+    <div class="step-header" onclick="toggleStep('step2')">
+      <div class="step-number" id="step2-num">2</div>
       <div>
         <div class="step-title">プロンプトを生成してコピー</div>
         <div class="step-subtitle">ボタン1つで最適化されたプロンプトが完成</div>
@@ -585,10 +459,10 @@
     </div>
   </div>
 
-  <!-- STEP 4: Checklist -->
-  <div class="step collapsed" id="step4">
-    <div class="step-header" onclick="toggleStep('step4')">
-      <div class="step-number" id="step4-num">4</div>
+  <!-- STEP 3: Checklist -->
+  <div class="step collapsed" id="step3">
+    <div class="step-header" onclick="toggleStep('step3')">
+      <div class="step-number" id="step3-num">3</div>
       <div>
         <div class="step-title">AI出力後の確認チェックリスト</div>
         <div class="step-subtitle">出力結果を確認する際のチェック項目</div>
@@ -866,13 +740,7 @@ function updateCharCount() {
 }
 
 function checkReadiness() {
-  const name = document.getElementById('storeName').value.trim();
-  const genre = document.getElementById('genre').value;
-  const area = document.getElementById('area').value.trim();
-  const sheet = document.getElementById('hearingSheet').value.trim();
-
-  const ready = name && genre && area && sheet;
-  document.getElementById('generateBtn').disabled = false; // Always allow, but warn
+  // No-op, kept for compatibility
 }
 
 function showStatus(msg, type) {
@@ -883,44 +751,16 @@ function showStatus(msg, type) {
 }
 
 function generatePrompt() {
-  const storeName = document.getElementById('storeName').value.trim();
-  const genre = document.getElementById('genre').value;
-  const area = document.getElementById('area').value.trim();
-  const ownerName = document.getElementById('ownerName').value.trim();
-  const mainMenu = document.getElementById('mainMenu').value.trim();
-  const target = document.getElementById('target').value.trim();
-  const strength = document.getElementById('strength').value.trim();
-  const achievement = document.getElementById('achievement').value.trim();
-  const price = document.getElementById('price').value.trim();
-  const memo = document.getElementById('memo').value.trim();
   const hearingSheet = document.getElementById('hearingSheet').value.trim();
 
   // Validation
-  if (!storeName || !genre || !area) {
-    showStatus('店名・業種・地域は必須です。入力してください。', 'warning');
-    return;
-  }
   if (!hearingSheet) {
     showStatus('ヒアリングシートの内容を貼り付けてください。', 'warning');
     return;
   }
 
-  // Build structured input
-  let clientInfo = `\n---\n\n## クライアント基本情報（フォーム入力）\n`;
-  clientInfo += `- 店名: ${storeName}\n`;
-  clientInfo += `- 業種: ${genre}\n`;
-  clientInfo += `- 地域: ${area}\n`;
-  if (ownerName) clientInfo += `- オーナー名: ${ownerName}\n`;
-  if (mainMenu) clientInfo += `- 主要メニュー: ${mainMenu}\n`;
-  if (target) clientInfo += `- ターゲット層: ${target}\n`;
-  if (strength) clientInfo += `- 強み/差別化: ${strength}\n`;
-  if (achievement) clientInfo += `- 実績/数字: ${achievement}\n`;
-  if (price) clientInfo += `- 価格帯: ${price}\n`;
-  if (memo) clientInfo += `- メモ: ${memo}\n`;
-
-  clientInfo += `\n---\n\n## ヒアリングシート全文\n\n${hearingSheet}`;
-
-  const fullPrompt = SYSTEM_PROMPT + clientInfo;
+  // Build prompt
+  const fullPrompt = SYSTEM_PROMPT + `\n---\n\n## ヒアリングシート全文\n\n${hearingSheet}`;
 
   // Display
   document.getElementById('outputText').textContent = fullPrompt;
@@ -928,15 +768,6 @@ function generatePrompt() {
 
   // Preview
   const preview = `--- プレビュー ---
-対象: ${storeName}（${genre}）
-地域: ${area}
-${ownerName ? 'オーナー: ' + ownerName : ''}
-${mainMenu ? 'メニュー: ' + mainMenu : ''}
-${target ? 'ターゲット: ' + target : ''}
-${strength ? '強み: ' + strength : ''}
-${achievement ? '実績: ' + achievement : ''}
-${price ? '価格: ' + price : ''}
-
 ヒアリングシート: ${hearingSheet.length.toLocaleString()}文字
 プロンプト合計: ${fullPrompt.length.toLocaleString()}文字
 
@@ -951,8 +782,6 @@ ${price ? '価格: ' + price : ''}
   // Mark steps
   document.getElementById('step1-num').classList.add('done');
   document.getElementById('step1-num').textContent = '\u2713';
-  document.getElementById('step2-num').classList.add('done');
-  document.getElementById('step2-num').textContent = '\u2713';
 
   showStatus('プロンプトを生成しました。コピーしてClaudeに貼り付けてください。', 'success');
 
@@ -985,12 +814,11 @@ function openClaude() {
 
 function downloadText() {
   if (!window._generatedPrompt) return;
-  const storeName = document.getElementById('storeName').value.trim() || 'client';
   const blob = new Blob([window._generatedPrompt], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `madoguchi_prompt_${storeName}_${new Date().toISOString().slice(0,10)}.txt`;
+  a.download = `madoguchi_prompt_${new Date().toISOString().slice(0,10)}.txt`;
   a.click();
   URL.revokeObjectURL(url);
 }
