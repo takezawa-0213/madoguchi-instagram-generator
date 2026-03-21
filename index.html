@@ -316,6 +316,83 @@
     100% { width: 0%; margin-left: 100%; }
   }
 
+  /* Chat */
+  .chat-section {
+    margin-top: 20px;
+    border-top: 2px solid var(--gray-200);
+    padding-top: 20px;
+  }
+  .chat-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chat-history {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+  }
+  .chat-message {
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .chat-message.user {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    margin-left: 40px;
+  }
+  .chat-message.system {
+    background: var(--success-light);
+    color: #166534;
+    margin-right: 40px;
+  }
+  .chat-message.applying {
+    background: var(--warning-light);
+    color: #92400e;
+    margin-right: 40px;
+  }
+  .chat-input-row {
+    display: flex;
+    gap: 8px;
+  }
+  .chat-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: none;
+    min-height: 44px;
+    max-height: 120px;
+  }
+  .chat-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+  .chat-send-btn {
+    padding: 10px 20px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    align-self: flex-end;
+  }
+  .chat-send-btn:hover { background: var(--primary-dark); }
+  .chat-send-btn:disabled { background: var(--gray-300); cursor: not-allowed; }
+
   /* Responsive */
   @media (max-width: 640px) {
     .container { padding: 16px; }
@@ -323,6 +400,8 @@
     .output-actions { flex-direction: column; }
     .btn-lg { padding: 14px 20px; font-size: 15px; }
     .output-rendered { padding: 16px; max-height: 60vh; }
+    .chat-message.user { margin-left: 20px; }
+    .chat-message.system, .chat-message.applying { margin-right: 20px; }
   }
 </style>
 </head>
@@ -331,7 +410,7 @@
 <div class="header">
   <div class="header-inner">
     <h1>Madoguchi Instagram初期構築 自動生成ツール</h1>
-    <span class="header-badge">AI自動生成 v3.0</span>
+    <span class="header-badge">AI自動生成 v3.1</span>
   </div>
 </div>
 
@@ -425,6 +504,26 @@
         <button class="btn btn-danger" onclick="stopGeneration()">
           生成を停止
         </button>
+      </div>
+
+      <!-- Chat Section (appears after generation) -->
+      <div id="chatSection" class="chat-section" style="display:none;">
+        <div class="chat-title">
+          <span>&#x1f4ac;</span> 修正チャット
+          <span style="font-size:12px; font-weight:400; color:var(--gray-500);">— 出力内容への修正指示を入力</span>
+        </div>
+        <div class="chat-history" id="chatHistory"></div>
+        <div class="chat-input-row">
+          <textarea
+            id="chatInput"
+            class="chat-input"
+            placeholder="例: 台本①のトーンをもっと柔らかくして / プロフィール名候補を3つ追加して / ハイライトに「クーポン」カテゴリを追加..."
+            rows="1"
+            onkeydown="handleChatKey(event)"
+            oninput="autoResizeChatInput(this)"
+          ></textarea>
+          <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()">送信</button>
+        </div>
       </div>
     </div>
   </div>
@@ -651,11 +750,14 @@ function onGenerationComplete() {
   document.getElementById('step2-num').classList.add('done');
   document.getElementById('step2-num').textContent = '\u2713';
 
+  // Show chat section
+  document.getElementById('chatSection').style.display = 'block';
+
   // Auto-expand checklist
   document.getElementById('step3').classList.remove('collapsed');
   document.getElementById('step3').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  showStatus('生成完了! 下のチェックリストで内容を確認してください。', 'success');
+  showStatus('生成完了! 修正チャットで内容を調整できます。', 'success');
   resetGenerateBtn();
 }
 
@@ -734,6 +836,145 @@ function resetChecklist() {
 
 function showComplete() {
   showStatus('全項目の確認が完了しました! クライアントへの送信OKです。', 'success');
+}
+
+// ============================================================
+// Chat (Modification)
+// ============================================================
+let _isChatting = false;
+let _chatAbortController = null;
+let _chatHistory = [];
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChatMessage();
+  }
+}
+
+function autoResizeChatInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function addChatBubble(text, type) {
+  const history = document.getElementById('chatHistory');
+  const div = document.createElement('div');
+  div.className = 'chat-message ' + type;
+  div.textContent = text;
+  history.appendChild(div);
+  history.scrollTop = history.scrollHeight;
+  return div;
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  const message = input.value.trim();
+  if (!message || _isChatting || !_rawOutput) return;
+
+  _isChatting = true;
+  _chatAbortController = new AbortController();
+
+  // Disable input
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('chatSendBtn').disabled = true;
+
+  // Show user message
+  addChatBubble(message, 'user');
+  const statusBubble = addChatBubble('修正を適用中...', 'applying');
+
+  // Show streaming indicators on output
+  document.getElementById('streamingBadge').style.display = 'inline-flex';
+  document.getElementById('progressBar').style.display = 'block';
+
+  const hearingSheet = document.getElementById('hearingSheet').value.trim();
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        currentOutput: _rawOutput,
+        userMessage: message,
+        hearingSheet: hearingSheet || undefined,
+      }),
+      signal: _chatAbortController.signal,
+    });
+
+    if (!response.ok) {
+      let errorMsg;
+      try {
+        const errorData = await response.json();
+        errorMsg = errorData.error || 'API呼び出しに失敗しました';
+      } catch {
+        errorMsg = `HTTP ${response.status}: API呼び出しに失敗しました`;
+      }
+      statusBubble.textContent = 'エラー: ' + errorMsg;
+      statusBubble.className = 'chat-message system';
+      resetChat();
+      return;
+    }
+
+    // Reset output for new version
+    _rawOutput = '';
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (!data || data === '[DONE]') continue;
+
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.text) {
+            _rawOutput += parsed.text;
+            scheduleRender();
+          }
+        } catch (e) {
+          // Skip
+        }
+      }
+    }
+
+    // Final render
+    renderOutput();
+
+    // Update status bubble
+    statusBubble.textContent = '修正を適用しました';
+    statusBubble.className = 'chat-message system';
+
+    _chatHistory.push({ role: 'user', text: message });
+
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      statusBubble.textContent = '修正を中断しました';
+    } else {
+      statusBubble.textContent = 'エラー: ' + error.message;
+    }
+    statusBubble.className = 'chat-message system';
+  }
+
+  resetChat();
+}
+
+function resetChat() {
+  _isChatting = false;
+  document.getElementById('chatSendBtn').disabled = false;
+  document.getElementById('streamingBadge').style.display = 'none';
+  document.getElementById('progressBar').style.display = 'none';
+  document.getElementById('chatInput').focus();
 }
 </script>
 </body>
