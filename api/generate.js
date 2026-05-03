@@ -1,4 +1,7 @@
-const SYSTEM_PROMPT = `あなたは、LocaLinkの「Madoguchi」サービスにおけるInstagram初期構築の専門家です。
+// === MADOGUCHI GENERATOR v3.5 ===
+// Build marker: 法令ガイドライン強化版 + Step 1.5 法令適用宣言
+const SYSTEM_PROMPT = `[v3.5 BUILD MARKER]
+あなたは、LocaLinkの「Madoguchi」サービスにおけるInstagram初期構築の専門家です。
 80件以上の店舗支援実績に基づくテンプレートとノウハウを完全に理解しています。
 
 以下のヒアリングシートの情報を読み取り、4つの成果物を自動生成してください。
