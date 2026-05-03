@@ -861,8 +861,9 @@ export default async function handler(req) {
     // 長い表現を先に書く（部分一致で短い表現が先に置換されるのを防ぐため）
     // ========================================
     const NG_REPLACEMENTS = [
-      // ★デバッグ用一時マーカー（v4.0.1）：出力に [FILTER_ACTIVE] が出ればフィルタ実行確認OK
-      ['Step 1:', 'Step 1 [FILTER_ACTIVE]:'],
+      // ★デバッグ用一時マーカー（v4.0.2）：出力に [F-OK] が出ればフィルタ実行確認OK
+      ['不足情報リスト', '不足情報リスト [F-OK]'],
+      ['【成果物1】', '【成果物1[F-OK]】'],
       // 痩身関連（複合句を先に）
       ['食事制限なしで見た目痩せ', 'お一人おひとりに最適なプラン'],
       ['食事制限なしで痩せる', 'お一人おひとりに合わせた痩身'],
@@ -902,10 +903,9 @@ export default async function handler(req) {
     // バッファ保持で必要な最大長（NG表現の最長文字数）
     const MAX_NG_LEN = Math.max(...NG_REPLACEMENTS.map(([ng]) => ng.length));
 
-    // フィルタ関数：バッファに新テキストを追加し、NG置換を適用、ストリーム境界に注意して送出可能部分を返す
-    function applyFilter(state, newText, isFinal) {
+    // フィルタ関数（arrow式・Edge Runtime互換性のため function宣言から変更）
+    const applyFilter = (state, newText, isFinal) => {
       state.buffer += newText;
-      // 全NG表現を置換
       for (const [ng, ok] of NG_REPLACEMENTS) {
         if (state.buffer.includes(ng)) {
           state.buffer = state.buffer.split(ng).join(ok);
@@ -913,11 +913,9 @@ export default async function handler(req) {
       }
       let toSend = '';
       if (isFinal) {
-        // 終端：バッファ全部送出
         toSend = state.buffer;
         state.buffer = '';
       } else {
-        // ストリーム途中：末尾 (MAX_NG_LEN - 1) 文字は次チャンクとの境界の可能性があるため保留
         const holdLen = MAX_NG_LEN - 1;
         if (state.buffer.length > holdLen) {
           toSend = state.buffer.slice(0, -holdLen);
@@ -925,7 +923,7 @@ export default async function handler(req) {
         }
       }
       return toSend;
-    }
+    };
 
     // Process stream: extract text deltas, apply NG filter, forward as simplified SSE
     const encoder = new TextEncoder();
