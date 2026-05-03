@@ -1,6 +1,7 @@
-// === MADOGUCHI GENERATOR v3.5 ===
-// Build marker: 法令ガイドライン強化版 + Step 1.5 法令適用宣言
-const SYSTEM_PROMPT = `[v3.5 BUILD MARKER]
+// === MADOGUCHI GENERATOR v4.0 ===
+// Build marker: 後処理フィルタ追加（AI出力後にNG表現を機械的にOK表現へ強制置換）
+// プロンプト本体は v3.5 のまま、SSE ストリーム転送経路にフィルタを挟むだけのアーキテクチャ
+const SYSTEM_PROMPT = `[v4.0 BUILD MARKER]
 あなたは、LocaLinkの「Madoguchi」サービスにおけるInstagram初期構築の専門家です。
 80件以上の店舗支援実績に基づくテンプレートとノウハウを完全に理解しています。
 
@@ -837,7 +838,7 @@ export default async function handler(req) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-7',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 32000,
         stream: true,
         system: SYSTEM_PROMPT,
@@ -855,7 +856,76 @@ export default async function handler(req) {
       });
     }
 
-    // Process stream: extract text deltas and forward as simplified SSE
+    // ========================================
+    // v4.0 後処理フィルタ用 NG → OK 置換マップ
+    // 長い表現を先に書く（部分一致で短い表現が先に置換されるのを防ぐため）
+    // ========================================
+    const NG_REPLACEMENTS = [
+      // 痩身関連（複合句を先に）
+      ['食事制限なしで見た目痩せ', 'お一人おひとりに最適なプラン'],
+      ['食事制限なしで痩せる', 'お一人おひとりに合わせた痩身'],
+      ['驚くほどボディラインが整う', 'お一人おひとりに寄り添うボディケア'],
+      ['驚くほど見た目が変わる', 'お一人おひとりに合わせたケア'],
+      ['驚くほど痩せる', 'お一人おひとりに寄り添う痩身'],
+      ['食事制限なし', '無理のないメニュー'],
+      ['食事制限ゼロ', '無理のないメニュー'],
+      ['食事制限不要', '無理のないメニュー'],
+      ['見た目痩せ', '理想のスタイル'],
+      // 美容・フェイシャル
+      ['老け顔改善', '明るい印象に変わるエイジングケア'],
+      ['老け顔', '年齢サインのケア'],
+      ['シミが消える', '肌を整え明るい印象へ'],
+      ['シワがなくなる', 'ハリと潤いを与え若々しい印象の肌へ'],
+      ['ニキビが治る', '肌を清潔に保ち健やかな状態へ'],
+      // 整体・ボディケア（あはき法）
+      ['不調を改善', 'お悩みに寄り添う'],
+      ['症状が消える', '不調にアプローチ'],
+      ['自律神経を整える', 'リラックスできる時間'],
+      // 脱毛・ネイル・マツエク（薬機法）
+      ['永久脱毛', 'サロン脱毛'],
+      ['爪が育つ', '自爪のコンディションを整える'],
+      ['自まつ毛が伸びる', '自まつ毛をいたわる設計'],
+      // 全業種共通の絶対NG（合理的根拠なし）
+      ['結果で選ばれる', '丁寧な施術が支持される'],
+      ['絶対痩せる', '結果重視の方から選ばれる施術'],
+      ['絶対美味しい', '素材の良さが引き立つ'],
+      ['絶対上達', '上達される方が多い'],
+      ['必ず合格', '合格者を多く輩出'],
+      ['100%結果', '高い実績'],
+      ['100%深爪改善', '美しい指先を目指せるケア'],
+      ['日本一', '当店こだわりの'],
+      ['業界最強', '当店の強み'],
+    ];
+
+    // バッファ保持で必要な最大長（NG表現の最長文字数）
+    const MAX_NG_LEN = Math.max(...NG_REPLACEMENTS.map(([ng]) => ng.length));
+
+    // フィルタ関数：バッファに新テキストを追加し、NG置換を適用、ストリーム境界に注意して送出可能部分を返す
+    function applyFilter(state, newText, isFinal) {
+      state.buffer += newText;
+      // 全NG表現を置換
+      for (const [ng, ok] of NG_REPLACEMENTS) {
+        if (state.buffer.includes(ng)) {
+          state.buffer = state.buffer.split(ng).join(ok);
+        }
+      }
+      let toSend = '';
+      if (isFinal) {
+        // 終端：バッファ全部送出
+        toSend = state.buffer;
+        state.buffer = '';
+      } else {
+        // ストリーム途中：末尾 (MAX_NG_LEN - 1) 文字は次チャンクとの境界の可能性があるため保留
+        const holdLen = MAX_NG_LEN - 1;
+        if (state.buffer.length > holdLen) {
+          toSend = state.buffer.slice(0, -holdLen);
+          state.buffer = state.buffer.slice(-holdLen);
+        }
+      }
+      return toSend;
+    }
+
+    // Process stream: extract text deltas, apply NG filter, forward as simplified SSE
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
     const reader = anthropicRes.body.getReader();
@@ -863,6 +933,7 @@ export default async function handler(req) {
     const stream = new ReadableStream({
       async start(controller) {
         let buffer = '';
+        const filterState = { buffer: '' };
         try {
           while (true) {
             const { done, value } = await reader.read();
@@ -879,12 +950,20 @@ export default async function handler(req) {
               try {
                 const parsed = JSON.parse(data);
                 if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: parsed.delta.text })}\n\n`));
+                  const filtered = applyFilter(filterState, parsed.delta.text, false);
+                  if (filtered) {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: filtered })}\n\n`));
+                  }
                 }
               } catch (e) {
                 // Skip non-JSON lines
               }
             }
+          }
+          // 終端：保留バッファをフラッシュ
+          const finalText = applyFilter(filterState, '', true);
+          if (finalText) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: finalText })}\n\n`));
           }
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
