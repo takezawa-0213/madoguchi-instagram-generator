@@ -934,6 +934,8 @@ export default async function handler(req) {
       async start(controller) {
         let buffer = '';
         const filterState = { buffer: '' };
+        // ★最終診断マーカー：新コード実行されていれば出力先頭にこれが出る
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: '[STREAM_INIT_v403]\n\n' })}\n\n`));
         try {
           while (true) {
             const { done, value } = await reader.read();
