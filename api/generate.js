@@ -1,7 +1,7 @@
-// === MADOGUCHI GENERATOR v4.0 ===
-// Build marker: 後処理フィルタ追加（AI出力後にNG表現を機械的にOK表現へ強制置換）
-// プロンプト本体は v3.5 のまま、SSE ストリーム転送経路にフィルタを挟むだけのアーキテクチャ
-const SYSTEM_PROMPT = `[v4.0 BUILD MARKER]
+// === MADOGUCHI GENERATOR v4.1 ===
+// Build marker: 後処理フィルタ正式版（v4.0系のデバッグマーカー削除済み）
+// プロンプト本体は v3.5 のまま、SSE ストリーム転送経路で NG表現を機械的に OK表現へ強制置換
+const SYSTEM_PROMPT = `[v4.1 BUILD MARKER]
 あなたは、LocaLinkの「Madoguchi」サービスにおけるInstagram初期構築の専門家です。
 80件以上の店舗支援実績に基づくテンプレートとノウハウを完全に理解しています。
 
@@ -861,9 +861,6 @@ export default async function handler(req) {
     // 長い表現を先に書く（部分一致で短い表現が先に置換されるのを防ぐため）
     // ========================================
     const NG_REPLACEMENTS = [
-      // ★デバッグ用一時マーカー（v4.0.2）：出力に [F-OK] が出ればフィルタ実行確認OK
-      ['不足情報リスト', '不足情報リスト [F-OK]'],
-      ['【成果物1】', '【成果物1[F-OK]】'],
       // 痩身関連（複合句を先に）
       ['食事制限なしで見た目痩せ', 'お一人おひとりに最適なプラン'],
       ['食事制限なしで痩せる', 'お一人おひとりに合わせた痩身'],
@@ -934,8 +931,6 @@ export default async function handler(req) {
       async start(controller) {
         let buffer = '';
         const filterState = { buffer: '' };
-        // ★最終診断マーカー：新コード実行されていれば出力先頭にこれが出る
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: '[STREAM_INIT_v403]\n\n' })}\n\n`));
         try {
           while (true) {
             const { done, value } = await reader.read();
